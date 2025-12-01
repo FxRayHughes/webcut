@@ -501,6 +501,7 @@ function init() {
     loadSettings();
     applySettingsToUI();
     setupEventListeners();
+    setupMobileTabs();
 }
 
 // ==================== 渲染 ====================
@@ -1035,14 +1036,27 @@ function setupCanvasEvents() {
     let lastMoveTime = 0;
     const THROTTLE = 16;
 
-    elements.mainCanvas.addEventListener('mousedown', (e) => {
-        if (!state.originalImage) return;
-        if (e.button !== 0) return; // 只处理左键
+    // 统一坐标获取函数（支持鼠标和触摸）
+    function getEventCoords(e) {
+        if (e.touches && e.touches.length > 0) {
+            const rect = elements.mainCanvas.getBoundingClientRect();
+            return {
+                x: e.touches[0].clientX - rect.left,
+                y: e.touches[0].clientY - rect.top
+            };
+        }
+        return getCanvasCoords(e);
+    }
 
-        const coords = getCanvasCoords(e);
+    // 鼠标/触摸按下事件
+    function handlePointerDown(e) {
+        if (!state.originalImage) return;
+
+        const coords = getEventCoords(e);
 
         // 拾色模式
         if (state.isPickingColor) {
+            if (e.type === 'touchstart') e.preventDefault();
             pickColorFromImage(coords.x, coords.y);
             e.preventDefault();
             return;
@@ -1052,6 +1066,7 @@ function setupCanvasEvents() {
         if (state.mode === 'centerline' && state.individualMode) {
             const result = findCellHandleAtPosition(coords.x, coords.y);
             if (result) {
+                if (e.type === 'touchstart') e.preventDefault();
                 state.editingCell = result.cellIndex;
                 state.resizeHandle = result.handle;
                 state.dragStartArea = getCellArea(result.cellIndex);
@@ -1065,6 +1080,7 @@ function setupCanvasEvents() {
         if (state.mode === 'centerline' && !state.individualMode) {
             const line = findLineAtPosition(coords.x, coords.y);
             if (line) {
+                if (e.type === 'touchstart') e.preventDefault();
                 state.dragging = line;
                 elements.mainCanvas.style.cursor = line.type === 'x' ? 'ew-resize' : 'ns-resize';
                 e.preventDefault();
@@ -1072,7 +1088,21 @@ function setupCanvasEvents() {
                 return;
             }
         }
+    }
+
+    elements.mainCanvas.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return; // 只处理左键
+        handlePointerDown(e);
     });
+
+    // 触摸事件只在需要时阻止默认行为
+    elements.mainCanvas.addEventListener('touchstart', (e) => {
+        // 只在画布上有图片时才处理触摸
+        if (state.originalImage) {
+            e.preventDefault();
+        }
+        handlePointerDown(e);
+    }, { passive: false });
 
     // 双击进入编辑模式
     elements.mainCanvas.addEventListener('dblclick', (e) => {
@@ -1094,14 +1124,15 @@ function setupCanvasEvents() {
 
     let currentHovered = null;
 
-    elements.mainCanvas.addEventListener('mousemove', (e) => {
+    // 鼠标/触摸移动事件
+    function handlePointerMove(e) {
         const now = performance.now();
         if (now - lastMoveTime < THROTTLE) return;
         lastMoveTime = now;
 
         if (!state.originalImage) return;
 
-        const coords = getCanvasCoords(e);
+        const coords = getEventCoords(e);
 
         // 单独调整模式下拖拽
         if (state.editingCell !== null && state.resizeHandle && state.individualMode) {
@@ -1166,9 +1197,21 @@ function setupCanvasEvents() {
             }
             scheduleRender();
         }
-    }, { passive: true });
+    }
 
-    window.addEventListener('mouseup', () => {
+    elements.mainCanvas.addEventListener('mousemove', handlePointerMove, { passive: true });
+
+    // 触摸移动只在需要时阻止默认行为
+    elements.mainCanvas.addEventListener('touchmove', (e) => {
+        // 只在拖拽或调整时阻止默认滚动
+        if (state.dragging || state.resizeHandle || state.isPanning) {
+            e.preventDefault();
+        }
+        handlePointerMove(e);
+    }, { passive: false });
+
+    // 鼠标/触摸释放事件
+    function handlePointerUp() {
         if (state.editingCell !== null && state.resizeHandle) {
             state.resizeHandle = null;
             state.dragStartArea = null;
@@ -1184,7 +1227,10 @@ function setupCanvasEvents() {
             schedulePreviewUpdate();
             saveHistory(); // 保存中心线拖动历史
         }
-    }, { passive: true });
+    }
+
+    window.addEventListener('mouseup', handlePointerUp, { passive: true });
+    window.addEventListener('touchend', handlePointerUp, { passive: true });
 
     elements.mainCanvas.addEventListener('mouseleave', () => {
         if (!state.dragging && !state.isPanning && !state.resizeHandle) {
@@ -1560,51 +1606,147 @@ function setupZoomControls() {
         zoomAtPoint(delta, mouseX, mouseY);
     }, { passive: false });
 
-    // 左键拖拽画布
-    elements.mainCanvas.addEventListener('mousedown', (e) => {
+    // 双指缩放支持
+    let lastTouchDistance = 0;
+    let lastTouchCenter = { x: 0, y: 0 };
+    let isPinching = false;
+
+    elements.mainCanvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2 && state.originalImage) {
+            e.preventDefault();
+            isPinching = true;
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            lastTouchDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+            const rect = elements.mainCanvas.getBoundingClientRect();
+            lastTouchCenter = {
+                x: ((touch1.clientX + touch2.clientX) / 2) - rect.left,
+                y: ((touch1.clientY + touch2.clientY) / 2) - rect.top
+            };
+        }
+    }, { passive: false });
+
+    elements.mainCanvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && isPinching) {
+            e.preventDefault();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const currentDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+
+            if (lastTouchDistance > 0) {
+                const scale = currentDistance / lastTouchDistance;
+                const delta = (scale - 1) * 0.5;
+                zoomAtPoint(delta, lastTouchCenter.x, lastTouchCenter.y);
+            }
+
+            lastTouchDistance = currentDistance;
+        }
+    }, { passive: false });
+
+    elements.mainCanvas.addEventListener('touchend', () => {
+        lastTouchDistance = 0;
+        isPinching = false;
+    });
+
+    // 左键/单指拖拽画布
+    function handlePanStart(e) {
+        // 如果是双指触摸，不启动拖拽
+        if (e.touches && e.touches.length !== 1) return;
+
         // 如果正在调整单元格，不启动画布拖拽
         if (state.editingCell !== null || state.resizeHandle) {
             return;
         }
         // 如果在单独调整模式下点击了单元格或手柄，不启动画布拖拽
         if (state.mode === 'centerline' && state.individualMode) {
-            const coords = getCanvasCoords(e);
-            const result = findCellHandleAtPosition(coords.x, coords.y);
+            const coords = e.touches
+                ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                : { x: e.clientX, y: e.clientY };
+            const rect = elements.mainCanvas.getBoundingClientRect();
+            const canvasCoords = {
+                x: coords.x - rect.left,
+                y: coords.y - rect.top
+            };
+            const result = findCellHandleAtPosition(canvasCoords.x, canvasCoords.y);
             if (result) {
                 return;
             }
         }
-        if (e.button === 0 && !state.dragging) {
+        // 检查是否点击了中心线
+        if (state.mode === 'centerline' && !state.individualMode) {
+            const coords = e.touches
+                ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                : { x: e.clientX, y: e.clientY };
+            const rect = elements.mainCanvas.getBoundingClientRect();
+            const canvasCoords = {
+                x: coords.x - rect.left,
+                y: coords.y - rect.top
+            };
+            const line = findLineAtPosition(canvasCoords.x, canvasCoords.y);
+            if (line) {
+                return; // 不启动拖拽，让线条拖拽接管
+            }
+        }
+
+        if ((e.button === 0 || e.touches) && !state.dragging) {
+            // 触摸时只在画布上启动拖拽才阻止默认行为
+            if (e.type === 'touchstart' && state.originalImage) {
+                e.preventDefault();
+            }
             state.isPanning = true;
-            state.panStart = { x: e.clientX, y: e.clientY };
+            const coords = e.touches
+                ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                : { x: e.clientX, y: e.clientY };
+            state.panStart = coords;
             state.viewStart = { x: state.view.offsetX, y: state.view.offsetY };
             elements.mainCanvas.style.cursor = 'grabbing';
         }
-    });
+    }
 
-    elements.mainCanvas.addEventListener('mousemove', (e) => {
+    function handlePanMove(e) {
         // 如果正在调整单元格，不移动画布
         if (state.editingCell !== null && state.resizeHandle) {
             return;
         }
         if (state.isPanning && !state.dragging) {
-            const dx = e.clientX - state.panStart.x;
-            const dy = e.clientY - state.panStart.y;
+            // 触摸移动画布时阻止默认滚动
+            if (e.type === 'touchmove') {
+                e.preventDefault();
+            }
+            const coords = e.touches
+                ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+                : { x: e.clientX, y: e.clientY };
+            const dx = coords.x - state.panStart.x;
+            const dy = coords.y - state.panStart.y;
             state.view.offsetX = state.viewStart.x + dx;
             state.view.offsetY = state.viewStart.y + dy;
             scheduleRender();
         }
-    });
+    }
 
-    const stopPanning = (e) => {
+    const stopPanning = () => {
         if (state.isPanning) {
             state.isPanning = false;
             elements.mainCanvas.style.cursor = 'grab';
         }
     };
 
+    elements.mainCanvas.addEventListener('mousedown', handlePanStart);
+    elements.mainCanvas.addEventListener('touchstart', handlePanStart, { passive: false });
+
+    elements.mainCanvas.addEventListener('mousemove', handlePanMove);
+    elements.mainCanvas.addEventListener('touchmove', handlePanMove, { passive: false });
+
     elements.mainCanvas.addEventListener('mouseup', stopPanning);
+    elements.mainCanvas.addEventListener('touchend', stopPanning);
     window.addEventListener('mouseup', stopPanning);
+    window.addEventListener('touchend', stopPanning);
 }
 
 function zoomBy(delta) {
@@ -1837,6 +1979,9 @@ function generatePreviews() {
                 <img src="${dataUrl}" alt="预览 ${idx + 1}" title="双击查看大图">
                 <span class="preview-name" title="双击编辑名称">${customName}</span>
                 <div class="preview-actions">
+                    <button class="action-btn" data-action="download" title="单独下载">
+                        <i data-feather="download"></i>
+                    </button>
                     <button class="action-btn" data-action="edit" title="编辑裁剪区域">
                         <i data-feather="crop"></i>
                     </button>
@@ -1889,7 +2034,9 @@ function generatePreviews() {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const action = btn.dataset.action;
-                if (action === 'edit') {
+                if (action === 'download') {
+                    downloadSingleImage(idx);
+                } else if (action === 'edit') {
                     openCropEditor(idx);
                 } else if (action === 'delete') {
                     state.disabledCells.add(idx);
@@ -1986,6 +2133,42 @@ function updateCellSizeInfo() {
         document.getElementById('cellSize').textContent =
             `${state.cellWidth} × ${state.cellHeight} 像素 (${enabled}/${total}张)`;
     }
+}
+
+// ==================== 单个图片下载 ====================
+function downloadSingleImage(index) {
+    const item = state.croppedImages.find(img => img.index === index + 1);
+    if (!item) {
+        alert('图片不存在');
+        return;
+    }
+
+    const format = document.getElementById('exportFormat').value;
+    const quality = parseFloat(document.getElementById('quality').value);
+    const mimeType = format === 'jpeg' ? 'image/jpeg' :
+                    format === 'webp' ? 'image/webp' : 'image/png';
+
+    // 使用原图裁剪
+    const canvas = document.createElement('canvas');
+    canvas.width = item.area.width;
+    canvas.height = item.area.height;
+    const ctx = canvas.getContext('2d');
+
+    const sourceImage = state.processedImage || state.originalImage;
+    ctx.drawImage(
+        sourceImage,
+        item.area.x, item.area.y, item.area.width, item.area.height,
+        0, 0, item.area.width, item.area.height
+    );
+
+    const dataUrl = format === 'png' ?
+        canvas.toDataURL(mimeType) :
+        canvas.toDataURL(mimeType, quality);
+
+    const link = document.createElement('a');
+    link.download = `${item.name}.${format}`;
+    link.href = dataUrl;
+    link.click();
 }
 
 // ==================== 导出 (使用原图) ====================
@@ -2843,6 +3026,54 @@ function resetToOriginal() {
     scheduleRender();
     schedulePreviewUpdate();
     saveHistory(); // 保存重置操作历史
+}
+
+// ==================== 移动端标签页切换 ====================
+function setupMobileTabs() {
+    const mobileTabs = document.getElementById('mobileTabs');
+    if (!mobileTabs) return;
+
+    // 初始化：设置默认标签
+    document.body.setAttribute('data-mobile-tab', 'settings');
+
+    // 标签点击事件
+    mobileTabs.addEventListener('click', (e) => {
+        const tab = e.target.closest('.mobile-tab');
+        if (!tab) return;
+
+        const tabName = tab.dataset.tab;
+        switchMobileTab(tabName);
+    });
+}
+
+function switchMobileTab(tabName) {
+    // 更新body的data属性
+    document.body.setAttribute('data-mobile-tab', tabName);
+
+    // 更新标签激活状态
+    document.querySelectorAll('.mobile-tab').forEach(tab => {
+        if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    // 切换到工作空间时，重新渲染画布
+    if (tabName === 'workspace' && state.originalImage) {
+        // 延迟渲染，确保DOM已更新
+        setTimeout(() => {
+            scheduleRender();
+        }, 100);
+    }
+
+    // 切换到资源管理时，确保预览图是最新的
+    if (tabName === 'resources') {
+        // 如果还没有预览图，生成一次
+        if (state.croppedImages.length === 0 && state.originalImage) {
+            schedulePreviewUpdate();
+        }
+    }
 }
 
 // ==================== 启动 ====================

@@ -1,0 +1,542 @@
+/* ==================== 手机竖屏适配 (< 768px) ==================== */
+/* 采用标签页切换的移动端布局 */
+
+@media (max-width: 767px) and (orientation: portrait) {
+    /* ========== 全局设置 ========== */
+    body {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: auto;
+    }
+
+    .app-container {
+        height: auto !important;
+        min-height: 100vh;
+        overflow-y: visible;
+    }
+
+    /* ========== 顶部标题栏 ========== */
+    .app-header {
+        flex-direction: column;
+        padding: 10px 16px 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--bg-panel);
+    }
+
+    .app-header h1 {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+
+    .header-actions {
+        position: static;
+        transform: none;
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    .publish-link {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+
+    .publish-link span {
+        display: inline;
+    }
+
+    .theme-toggle {
+        padding: 6px 10px;
+    }
+
+    /* ========== 移动端标签导航 ========== */
+    .mobile-tabs {
+        display: flex;
+        width: 100%;
+        border-bottom: 2px solid var(--border-color);
+        margin: 0 -16px;
+        padding: 0 16px;
+        background: var(--bg-panel);
+    }
+
+    .mobile-tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 10px 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        font-size: 11px;
+    }
+
+    .mobile-tab svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+    }
+
+    .mobile-tab.active {
+        color: var(--accent-color);
+    }
+
+    .mobile-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--accent-color);
+    }
+
+    /* 桌面端隐藏标签导航 */
+    @media (min-width: 768px) {
+        .mobile-tabs {
+            display: none !important;
+        }
+    }
+
+    /* ========== 主内容区 ========== */
+    .main-content {
+        flex-direction: column;
+        min-height: calc(100vh - 140px);
+    }
+
+    /* ========== 三个面板的显示控制 ========== */
+    /* 默认隐藏所有面板 */
+    .panel-left,
+    .panel-main,
+    .panel-right {
+        display: none;
+        width: 100%;
+        border: none;
+        max-height: none;
+    }
+
+    /* 基本设置标签：显示左侧面板 */
+    body[data-mobile-tab="settings"] .panel-left {
+        display: block;
+        order: 1;
+    }
+
+    /* 工作空间标签：显示中间编辑区 */
+    body[data-mobile-tab="workspace"] .panel-main {
+        display: flex;
+        order: 1;
+        min-height: 70vh;
+    }
+
+    /* 资源管理标签：显示右侧预览面板 */
+    body[data-mobile-tab="resources"] .panel-right {
+        display: block;
+        order: 1;
+    }
+
+    /* ========== 左侧面板（基本设置） ========== */
+    .panel-left {
+        overflow-y: auto;
+        padding-bottom: 20px;
+    }
+
+    /* ========== 中间编辑区（工作空间） ========== */
+    .panel-main {
+        background: var(--bg-canvas);
+    }
+
+    .canvas-header {
+        padding: 8px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .canvas-title {
+        display: none;
+    }
+
+    .zoom-controls {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .history-controls {
+        flex: 1;
+        justify-content: center;
+        margin-left: 0;
+    }
+
+    .canvas-header .hint {
+        width: 100%;
+        text-align: center;
+        font-size: 10px;
+    }
+
+    .canvas-container {
+        touch-action: none; /* 画布区域禁用默认触摸手势 */
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    #mainCanvas {
+        touch-action: none;
+    }
+
+    /* ========== 右侧面板（资源管理） ========== */
+    .panel-right {
+        overflow-y: auto;
+        padding-bottom: 20px;
+    }
+
+    /* ========== 触摸按钮优化 ========== */
+    .btn {
+        min-height: 48px;
+        font-size: 15px;
+        padding: 12px 16px;
+    }
+
+    .mode-btn,
+    .quick-grid-btn {
+        min-height: 44px;
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+
+    .zoom-btn,
+    .history-btn {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+
+    .zoom-btn svg,
+    .history-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .action-btn {
+        width: 42px;
+        height: 42px;
+    }
+
+    .action-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* ========== 输入控件优化 ========== */
+    .control-group {
+        margin-bottom: 16px;
+    }
+
+    .control-row {
+        gap: 12px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+        min-height: 44px;
+        font-size: 16px; /* 防止iOS自动缩放 */
+        padding: 10px 12px;
+    }
+
+    input[type="range"] {
+        height: 8px;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+    }
+
+    input[type="color"] {
+        width: 54px;
+        height: 44px;
+    }
+
+    .btn-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+
+    .btn-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* ========== 上传区域 ========== */
+    .upload-area {
+        padding: 40px 20px;
+        margin-bottom: 16px;
+    }
+
+    .upload-icon {
+        width: 52px;
+        height: 52px;
+    }
+
+    .upload-text {
+        font-size: 14px;
+    }
+
+    /* ========== 折叠面板 ========== */
+    .collapsible .section-header {
+        padding: 14px 16px;
+        font-size: 13px;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .collapse-icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    .panel h2 {
+        font-size: 13px;
+        margin-bottom: 14px;
+    }
+
+    /* ========== 模式切换 ========== */
+    .mode-switch {
+        gap: 10px;
+    }
+
+    /* ========== 快捷网格 ========== */
+    .quick-grids {
+        gap: 8px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* ========== 预览列表 ========== */
+    .preview-list {
+        gap: 10px;
+        padding-right: 0;
+    }
+
+    .preview-item {
+        padding: 12px 14px;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .preview-item img {
+        width: 52px;
+        height: 52px;
+    }
+
+    .preview-item .index {
+        min-width: 26px;
+        font-size: 12px;
+    }
+
+    .preview-item .preview-name {
+        font-size: 14px;
+    }
+
+    /* 操作按钮始终显示 */
+    .preview-item .preview-actions {
+        opacity: 1;
+    }
+
+    /* ========== 图片信息 ========== */
+    .image-info {
+        padding: 12px;
+        font-size: 12px;
+    }
+
+    /* ========== 弹窗优化 ========== */
+    .modal-content {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+
+    .modal-header {
+        padding: 14px 16px;
+    }
+
+    .modal-header h3 {
+        font-size: 15px;
+    }
+
+    .modal-close {
+        width: 32px;
+        height: 32px;
+        font-size: 24px;
+    }
+
+    .modal-body {
+        padding: 16px;
+    }
+
+    .crop-canvas-container {
+        min-height: 300px;
+        max-height: 55vh;
+    }
+
+    .crop-info {
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .crop-actions {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .crop-actions .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    /* ========== 大图预览 ========== */
+    .image-preview-content {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+
+    .image-preview-content img {
+        max-height: 85vh;
+    }
+
+    .image-preview-info {
+        font-size: 13px;
+        padding: 10px 16px;
+    }
+
+    /* ========== 赞助按钮 ========== */
+    .sponsor-affix {
+        bottom: 80px;
+        right: 16px;
+        left: auto;
+    }
+
+    .sponsor-collapsed {
+        width: 56px;
+        height: 56px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .sponsor-collapsed .sponsor-icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .sponsor-expanded {
+        bottom: auto;
+        top: -260px;
+        right: 0;
+        left: auto;
+    }
+
+    /* ========== 进度提示 ========== */
+    .progress-box {
+        padding: 24px 32px;
+        margin: 0 20px;
+    }
+
+    /* ========== 值显示 ========== */
+    .value-display {
+        min-width: 48px;
+        font-size: 14px;
+    }
+
+    .zoom-value {
+        min-width: 52px;
+        font-size: 13px;
+    }
+
+    .history-info {
+        min-width: 40px;
+        font-size: 12px;
+    }
+
+    /* ========== 复选框 ========== */
+    .checkbox-label {
+        font-size: 14px;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* ========== 提示文字 ========== */
+    .control-hint,
+    .mode-hint {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    /* ========== 滚动条优化 ========== */
+    .panel-left::-webkit-scrollbar,
+    .panel-right::-webkit-scrollbar,
+    .preview-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    /* ========== 触摸高亮移除 ========== */
+    button,
+    .upload-area,
+    .preview-item,
+    .action-btn {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ==================== 超小屏幕优化 (< 375px) ==================== */
+@media (max-width: 374px) and (orientation: portrait) {
+    .app-header h1 {
+        font-size: 16px;
+    }
+
+    .mobile-tab {
+        font-size: 10px;
+        padding: 8px 4px;
+    }
+
+    .mobile-tab svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .quick-grids {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .zoom-controls {
+        gap: 4px;
+    }
+
+    .zoom-btn,
+    .history-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+    }
+
+    .crop-actions .btn {
+        min-width: 100px;
+        font-size: 13px;
+    }
+
+    .sponsor-collapsed {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sponsor-collapsed .sponsor-icon {
+        width: 24px;
+        height: 24px;
+    }
+}

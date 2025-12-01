@@ -1,0 +1,110 @@
+/* ==================== 平板横屏适配 (768px - 1024px) ==================== */
+/* 平板横屏保持三栏布局，优化触摸交互 */
+
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    /* 调整面板宽度 */
+    .panel-left {
+        width: 200px;
+    }
+
+    .panel-right {
+        width: 220px;
+    }
+
+    /* 优化触摸按钮大小 */
+    .mode-btn,
+    .quick-grid-btn,
+    .btn {
+        min-height: 44px;
+        font-size: 13px;
+    }
+
+    .zoom-btn,
+    .history-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .zoom-btn svg,
+    .history-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* 优化滑块控制 */
+    input[type="range"] {
+        height: 6px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* 优化上传区域 */
+    .upload-area {
+        padding: 30px 15px;
+    }
+
+    .upload-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* 优化预览项 */
+    .preview-item {
+        padding: 8px 10px;
+    }
+
+    .preview-item img {
+        width: 44px;
+        height: 44px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* 优化折叠面板 */
+    .collapsible .section-header {
+        padding: 12px;
+        font-size: 12px;
+    }
+
+    /* 优化输入框 */
+    input[type="number"],
+    input[type="text"],
+    select {
+        min-height: 36px;
+        font-size: 13px;
+    }
+
+    /* 优化颜色选择器 */
+    input[type="color"] {
+        width: 44px;
+        height: 36px;
+    }
+
+    /* 优化图标按钮 */
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .btn-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* 赞助按钮调整 */
+    .sponsor-collapsed {
+        width: 50px;
+        height: 50px;
+    }
+
+    .sponsor-collapsed .sponsor-icon {
+        width: 24px;
+        height: 24px;
+    }
+}

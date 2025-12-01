@@ -68,6 +68,11 @@ body {
     position: relative;
 }
 
+/* 移动端标签导航 - 默认隐藏 */
+.mobile-tabs {
+    display: none;
+}
+
 .app-header h1 {
     font-size: 14px;
     font-weight: 500;

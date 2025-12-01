@@ -7,6 +7,8 @@
     <script charset="UTF-8" id="LA_COLLECT" src="https://sdk.51.la/js-sdk-pro.min.js"></script>
     <script>LA.init({id:"3OD21nybLiha2FZf",ck:"3OD21nybLiha2FZf",autoTrack:true})</script>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="tablet.css">
+    <link rel="stylesheet" href="phone.css">
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
@@ -24,6 +26,22 @@
                     <i data-feather="moon" class="theme-icon-dark"></i>
                 </button>
             </div>
+
+            <!-- 移动端标签导航 -->
+            <nav class="mobile-tabs" id="mobileTabs">
+                <button class="mobile-tab active" data-tab="settings">
+                    <i data-feather="settings"></i>
+                    <span>基本设置</span>
+                </button>
+                <button class="mobile-tab" data-tab="workspace">
+                    <i data-feather="edit-3"></i>
+                    <span>工作空间</span>
+                </button>
+                <button class="mobile-tab" data-tab="resources">
+                    <i data-feather="image"></i>
+                    <span>资源管理</span>
+                </button>
+            </nav>
         </header>
 
         <div class="main-content">
